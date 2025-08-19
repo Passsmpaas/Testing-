@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: video-downloader
+    env: python
+    buildCommand: ""
+    startCommand: bash start.sh
+    
