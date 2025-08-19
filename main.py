@@ -1,8 +1,11 @@
 import os
+import subprocess
 from pyrogram import Client, filters
 from dotenv import load_dotenv
+from threading import Thread
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
-# Load environment variables from .env
+# Load environment variables
 load_dotenv()
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
@@ -18,8 +21,23 @@ def start(client, message):
 
 @app.on_message(filters.command("download"))
 def download_video(client, message):
-    message.reply_text("Download function will go here...")
+    message.reply_text("Download function placeholder.")
 
-if __name__ == "__main__":
+# Start Pyrogram bot in separate thread
+def start_bot():
     app.run()
-    
+
+Thread(target=start_bot).start()
+
+# --- Dummy HTTP server for Render Web Service ---
+PORT = int(os.environ.get("PORT", 10000))
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot/Downloader is running!")
+
+server = HTTPServer(('', PORT), Handler)
+print(f"Listening on port {PORT} for Render Web Service")
+server.serve_forever()
