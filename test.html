@@ -1,0 +1,21 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Batch Player</title>
+</head>
+<body>
+<h1>Batch Video Player</h1>
+<select id="batchSelect"></select>
+<select id="subjectSelect"></select>
+<select id="topicSelect"></select>
+<video id="videoPlayer" width="640" controls></video>
+
+<script>
+async function fetchBatches(){/* JS to call /api/batches and populate dropdown */}
+async function fetchSubjects(){/* JS to call /api/subjects and populate dropdown */}
+async function fetchTopics(){/* JS to call /api/topics and populate dropdown & set video src */}
+</script>
+</body>
+</html>
