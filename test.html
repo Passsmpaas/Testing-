@@ -1,21 +1,165 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Batch Player</title>
+<title>Batch Video Player</title>
+<style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    select, button { margin: 5px; padding: 5px; }
+    video { display: block; margin-top: 20px; width: 640px; max-width: 100%; }
+</style>
 </head>
 <body>
 <h1>Batch Video Player</h1>
-<select id="batchSelect"></select>
-<select id="subjectSelect"></select>
-<select id="topicSelect"></select>
-<video id="videoPlayer" width="640" controls></video>
+
+<label>Institute:</label>
+<input id="ins" placeholder="Institute domain (example.com)" />
+<br>
+<label>User ID:</label>
+<input id="userid" placeholder="User ID" />
+<br>
+<label>Token:</label>
+<input id="token" placeholder="Auth Token" />
+<br>
+<button onclick="fetchBatches()">Load Batches</button>
+<br>
+
+<select id="batchSelect" onchange="fetchSubjects()">
+    <option value="">Select Batch</option>
+</select>
+<select id="subjectSelect" onchange="fetchTopics()">
+    <option value="">Select Subject</option>
+</select>
+<select id="topicSelect" onchange="updateVideoQualities()">
+    <option value="">Select Topic</option>
+</select>
+<select id="qualitySelect" onchange="playSelectedQuality()">
+    <option value="">Select Quality</option>
+</select>
+
+<video id="videoPlayer" controls></video>
 
 <script>
-async function fetchBatches(){/* JS to call /api/batches and populate dropdown */}
-async function fetchSubjects(){/* JS to call /api/subjects and populate dropdown */}
-async function fetchTopics(){/* JS to call /api/topics and populate dropdown & set video src */}
+let batches = [];
+let subjects = [];
+let topics = [];
+let currentVideos = [];
+
+async function fetchBatches() {
+    const ins = document.getElementById('ins').value;
+    const userid = document.getElementById('userid').value;
+    const token = document.getElementById('token').value;
+
+    const res = await fetch('/api/batches', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ins, userid, token})
+    });
+    batches = await res.json();
+
+    const batchSelect = document.getElementById('batchSelect');
+    batchSelect.innerHTML = '<option value="">Select Batch</option>';
+    batches.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b.courseid;
+        opt.text = b.course_name || b.courseid;
+        batchSelect.appendChild(opt);
+    });
+
+    document.getElementById('subjectSelect').innerHTML = '<option value="">Select Subject</option>';
+    document.getElementById('topicSelect').innerHTML = '<option value="">Select Topic</option>';
+    document.getElementById('qualitySelect').innerHTML = '<option value="">Select Quality</option>';
+}
+
+async function fetchSubjects() {
+    const selectedCourse = document.getElementById('batchSelect').value;
+    if (!selectedCourse) return;
+
+    const ins = document.getElementById('ins').value;
+    const userid = document.getElementById('userid').value;
+    const token = document.getElementById('token').value;
+
+    const res = await fetch('/api/subjects', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ins, userid, token, courseid: selectedCourse})
+    });
+    subjects = await res.json();
+
+    const subjectSelect = document.getElementById('subjectSelect');
+    subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+    subjects.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.subjectid;
+        opt.text = s.subject_name || s.subjectid;
+        subjectSelect.appendChild(opt);
+    });
+
+    document.getElementById('topicSelect').innerHTML = '<option value="">Select Topic</option>';
+    document.getElementById('qualitySelect').innerHTML = '<option value="">Select Quality</option>';
+}
+
+async function fetchTopics() {
+    const selectedCourse = document.getElementById('batchSelect').value;
+    const selectedSubject = document.getElementById('subjectSelect').value;
+    if (!selectedCourse || !selectedSubject) return;
+
+    const ins = document.getElementById('ins').value;
+    const userid = document.getElementById('userid').value;
+    const token = document.getElementById('token').value;
+
+    const res = await fetch('/api/topics', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ins, userid, token, courseid: selectedCourse, subjectid: selectedSubject})
+    });
+    topics = await res.json();
+
+    const topicSelect = document.getElementById('topicSelect');
+    topicSelect.innerHTML = '<option value="">Select Topic</option>';
+    topics.forEach((t, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx; // store index
+        opt.text = t.topic_name;
+        topicSelect.appendChild(opt);
+    });
+
+    document.getElementById('qualitySelect').innerHTML = '<option value="">Select Quality</option>';
+}
+
+function updateVideoQualities() {
+    const topicIndex = document.getElementById('topicSelect').value;
+    if (topicIndex === "") return;
+
+    currentVideos = topics[topicIndex].videos || [];
+    const qualitySelect = document.getElementById('qualitySelect');
+    qualitySelect.innerHTML = '<option value="">Select Quality</option>';
+
+    currentVideos.forEach((v, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.text = v.quality;
+        qualitySelect.appendChild(opt);
+    });
+
+    // Auto play first quality
+    if (currentVideos.length > 0) {
+        const videoPlayer = document.getElementById('videoPlayer');
+        videoPlayer.src = currentVideos[0].url;
+        videoPlayer.play();
+        qualitySelect.value = 0;
+    }
+}
+
+function playSelectedQuality() {
+    const idx = document.getElementById('qualitySelect').value;
+    if (idx === "" || !currentVideos[idx]) return;
+
+    const videoPlayer = document.getElementById('videoPlayer');
+    videoPlayer.src = currentVideos[idx].url;
+    videoPlayer.play();
+}
 </script>
 </body>
-</html>
+  </html>
+  
